@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="./css/bootstrap.css">
+    <title>Fetch API</title>
+</head>
+
+<body>
+    <div class="container">
+        <h1>Sign up</h1>
+        <div class="row">
+            <div class="col-md-6 offset-3">
+                <form method="POST">
+
+                    <div class="form-group">
+                        <label for="title">Title</label>
+                        <input type="text" class="form-control" name="title" placeholder="title">
+                        <div class="error text-danger">
+
+                        </div>
+                    </div>
+
+
+                    <div class="form-group">
+                        <textarea class="form-control" name="post_body">
+                   </textarea>
+                    </div>
+                    <button type="submit" class="btn btn-primary">Sign UP</button>
+                </form>
+            </div>
+        </div>
+
+
+
+        <div class="row post-list">
+
+
+        </div>
+
+
+    </div>
+    <script>
+        const form = document.querySelector('form');
+        const postList = document.querySelector('.post-list');
+        const subButton = document.querySelector('.btn');
+
+        let output = '';
+        const renderPost = (posts) => {
+            posts.forEach(post => {
+                output += `
+                <div class="col-md-6 mt-5">
+                <div class="card">
+                    <div class="card-body">
+                        <h4 class="card-title">${post.title}</h4>
+                    
+                    <p class="card-text">
+                        ${post.post_body}
+                    </p>
+                    
+                        <a href="#" class="card-link" id="edit-post" data-id="${post._id}">Edit</a>
+                        <a href="#" class="card-link" id="delete-post" data-id="${post._id}">Delete</a>
+                   
+                </div>
+                </div>
+            </div>
+                `;
+
+            });
+            postList.innerHTML = output;
+        }
+
+        postList.addEventListener('click', (e) => {
+            e.preventDefault();
+            let delButtonClick = e.target.id == "delete-post";
+            let editButtonClick = e.target.id == "edit-post";
+            let id = e.target.dataset.id;
+
+            if (delButtonClick) {
+                const url = 'http://localhost:5000/delete/'
+                fetch(`${url}${id}`, { method: 'DELETE' })
+                    .then(result => result.json()).then(() => location.reload());
+            }
+            if (editButtonClick) {
+                const parent = e.target.parentElement;
+                let titleContent = parent.querySelector('.card-title').textContent;
+                let bodyContent = parent.querySelector('.card-text').textContent;
+                console.log(titleContent);
+                form.title.value = titleContent;
+                form.post_body.value = bodyContent;
+                subButton.innerHTML = 'Update';
+            }
+
+            subButton.addEventListener('click', (e) => {
+                e.preventDefault();
+
+                const url = 'http://localhost:5000/update/';
+                fullurl = `${url}${id}`;
+                //console.log(form.title.value);
+                fetch(fullurl
+                    , {
+                        method: 'PUT',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({
+                            title: form.title.value,
+                            post_body: form.post_body.value
+                        })
+                    }).then(res => {
+                        form.title.value = "";
+                        form.post_body.value = "";
+                        location.reload()
+                    });
+
+            })
+        });
+
+        //get data
+        const url = 'http://localhost:5000/api/posts';
+        fetch(url).then(res => res.json()).then(data => renderPost(data));
+
+        //insert data
+
+        const error_log = document.querySelector('.error');
+        const error = [];
+
+        form.addEventListener('submit', (e) => {
+            e.preventDefault();
+            const title = form.title.value;
+            const post_body = form.post_body.value;
+            if (title != null || post_body != null) {
+                const url = 'http://localhost:5000/addPost';
+                fetch(url, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        title: title,
+                        post_body: post_body
+                    })
+                }).then(result => result.json()).then(data => {
+
+                    //let dataArr = Object.entries(data);
+
+                    const dataArr = [];
+                    dataArr.push(data);
+                    renderPost(dataArr);
+                    form.title.value = "";
+                    form.post_body.value = "";
+
+
+
+                })
+
+            } else {
+                error.push({ msg: 'All fields required' });
+                console.log(error);
+            }
+        })
+
+
+    </script>
+</body>
+
+</html>
